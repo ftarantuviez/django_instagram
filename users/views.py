@@ -1,7 +1,12 @@
 from django.shortcuts import render, redirect
-
 from django.contrib.auth import authenticate, login
 
+# Exceptions
+from django.db.utils import IntegrityError
+
+#Models
+from django.contrib.auth.models import User
+from users.models import Profile
 
 def login_view(request):
   
@@ -17,3 +22,35 @@ def login_view(request):
       return render(request, 'users/login.html', {'error': 'Invalid username or password'})
     
   return render(request, 'users/login.html')
+
+
+def sign_up_view(request):
+  
+  if request.method == 'POST':
+    username = request.POST['username']
+    passwd = request.POST['passwd']
+    passwd_confirmation = request.POST['passwd_confirmation']
+
+    if passwd != passwd_confirmation:
+      return render(request, 'users/signup.html', {'error': 'Password confirmation does not match'})
+    
+    try:
+      user = User.objects.create_user(username=username, password=passwd)
+      user.first_name = request.POST['first_name']
+      user.last_name = request.POST['last_name']
+      user.email = request.POST['email']
+      user.save()
+
+      profile = Profile(user=user)
+      profile.save()
+
+      return redirect('login')
+    except IntegrityError:
+      return render(request, 'users/signup.html', {'error': 'Username is already in use'})
+
+  return render(request, 'users/signup.html')
+
+
+def update_profile_view(request):
+
+  return render(request, 'users/update_profile.html')
